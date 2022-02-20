@@ -8,7 +8,7 @@ To get started this using browser to the dist folder and downloaded the megasync
 
 Once configured, just run the .exe and you can view the logs from each download. There are currently known issues that can occur with threading, but you can mitigate this by turning threading off. This is off by default in anticipation of issues. I have found it to be faster at times, but buggier with larger files.
 
-#Setting Up Config.ini
+## Setting Up Config.ini
 The config comes presetup with examples, but you will need to change this depending on your own files and folder structures.
 
 localSyncBaseFolder = D:/Sync
