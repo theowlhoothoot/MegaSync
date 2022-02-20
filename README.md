@@ -8,14 +8,17 @@ To get started this using browser to the dist folder and downloaded the megasync
 
 Once configured, just run the .exe and you can view the logs from each download. There are currently known issues that can occur with threading, but you can mitigate this by turning threading off. This is off by default in anticipation of issues. I have found it to be faster at times, but buggier with larger files.
 
-##Config.ini
+#Setting Up Config.ini
 localSyncBaseFolder = yourfolder 
+
 megaURL = yourmegaurl
+
 betaThreading = False
 
-###Example Config
 localSyncBaseFolder = D:/Sync
+
 megaURL = https://mega.nz/folder/gp12RQaK#SeztTrf6H3cUuJPWZEbuKQ
+
 betaThreading = False
 
 
