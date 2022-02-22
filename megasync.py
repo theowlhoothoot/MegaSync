@@ -32,14 +32,6 @@ from crypto import (a32_to_base64, encrypt_key, base64_url_encode,
                     decrypt_key, mpi_to_int, stringhash, prepare_key, make_id,
                     makebyte, modular_inverse)
 
-
-#This is the name of your base folder for syncing to.
-#base_name = r"D:/Sync2"
-
-#This is the url for the mega sync.
-#base_url = "https://mega.nz/folder/gp12RQaK#SeztTrf6H3cUuJPWZEbuKQ"
-
-
 config = configparser.ConfigParser()
 
 try:
@@ -47,6 +39,8 @@ try:
     base_name = config['DEFAULT']['localSyncBaseFolder']
     base_url = config['DEFAULT']['megaURL']
     threadingEnabled = config['DEFAULT']['betaThreading']
+    folderToIgnore = config['DEFAULT']['folderToIgnore']
+    folderToIgnore = json.loads(folderToIgnore)
 except:
     print ("Error reading your config files. Be sure you have the correct variables and file location.")
     exit(0)
@@ -154,7 +148,6 @@ def downloadSomething(root_folder: str, file_data) -> dict:
     json_resp = response.json()
     return json_resp[0]
 
-
 # This proccesses a mega node that we have.
 def process_node(node):
     global downloaded_count
@@ -183,12 +176,11 @@ def process_node(node):
                 filePath = "{0}/{1}".format(base_name, file_name)
 
                 if not (exists(filePath)):
-                    # print ("Downloading {0}/{1}".format(base_name, file_name))
-
                     something = downloadSomething(root_folder, file_data)
 
                     try:
-                        _download_file(something, key, filePath)
+                        if isAllowed(filePath):
+                            _download_file(something, key, filePath)
                     except Exception as e:
                         print("Error on " + file_name, e)
 
@@ -197,16 +189,17 @@ def process_node(node):
                 files[file_id] = folder_path
 
                 if not (exists(folder_path)):
-                    path = os.path.join(base_name, file_name)
-                    os.mkdir(path)
+                    if isAllowed(folder_path):
+                        path = os.path.join(base_name, file_name)
+                        os.mkdir(path)
         else:
             if (isFile):
                 filePath = "{0}/{1}".format(files[node["p"]], file_name)
                 if not (exists(filePath)):
-                    # print ("Downloading {0}/{1}".format(files[node["p"]], file_name))
                     something = downloadSomething(root_folder, file_data)
                     try:
-                        _download_file(something, key, filePath)
+                        if isAllowed(filePath):
+                            _download_file(something, key, filePath)
                     except Exception as e:
                         print("Error on " + file_name, e)
                 else:
@@ -217,13 +210,13 @@ def process_node(node):
                 files[file_id] = folder_path
 
                 if not (exists(folder_path)):
-                    path = os.path.join(files[node["p"]], file_name)
-                    os.mkdir(path)
+                    if isAllowed(folder_path):
+                        path = os.path.join(files[node["p"]], file_name)
+                        os.mkdir(path)
 
     downloaded_count += 1
 
     print(downloaded_count, "/", total_file_count, " files have been checked")
-
 
 # This will process one file at a time.
 def main():
@@ -242,12 +235,6 @@ def worker():
         q.task_done()
 
 def mainThreading():
-    num_worker_threads = 10
-
-    q = queue.Queue()
-
-    threads = []
-
     for i in range(num_worker_threads):
         t = threading.Thread(target=worker)
         t.start()
@@ -292,6 +279,15 @@ def getBaseFolderID():
 
     return file_id
 
+def isAllowed(fileName):
+    isAllowed = True
+    for folder in folderToIgnore:
+        folder = base_name + "/" + folder
+        if folder in fileName:
+            isAllowed = False
+
+    return isAllowed
+
 (root_folder, shared_enc_key) = parse_folder_url(base_url)
 
 shared_key = base64_to_a32(shared_enc_key)
@@ -304,15 +300,20 @@ total_file_count = len(nodes)
 file_count = 0
 downloaded_count = 0
 
+num_worker_threads = 10
+q = queue.Queue()
+threads = []
+
 if base_name and base_url:
     print ("Syncing {0} to {1}".format(base_url, base_name))
+
+    print ("Skipping {0}".format(",".join(folderToIgnore)))
+
     base_id = getBaseFolderID()
 
-    print (threadingEnabled)
     if threadingEnabled == 'True':
         mainThreading()
     else:
         main()
-        pass
 else:
     print ("Error getting sync folder / mega. Please check your config settings.")
